@@ -31,6 +31,9 @@
 (require 'edbi)
 (require 's)
 
+(defvar company-edbi-known-categories '("Keyword" "Function" "TABLE" "VIEW" "TYPE"))
+(defvar company-edbi-fallback-category "Column")
+
 (defun company-edbi-prefix ()
   "Grab prefix for `company-edbi' backend."
   (and (eq major-mode 'edbi:sql-mode)
@@ -65,6 +68,22 @@ PREFIX is a candidates prefix supplied by `company'."
             (unless (string= summary document)
               (concat " " document)))))
 
+(defun company-edbi-annotation (candidate)
+  "Get CANDIDATE annotation."
+  (let* ((summary (get-text-property 0 'summary candidate)))
+    ;; we have only 4 types of sources
+    ;; ac-source-edbi:tables  -> "TABLE"|"VIEW"
+    ;; ac-source-edbi:columns -> "\w+"
+    ;; ac-source-edbi:types   -> "TYPE"
+    ;; ac-source-edbi:keywords -> "Keyword"|"Function"
+    (setq summary (or summary ""))
+    (setq found_elem (member summary company-edbi-known-categories))
+    (concat " "
+     (if found_elem
+         (car found_elem)
+       company-edbi-fallback-category))))
+
+
 ;;;###autoload
 (defun company-edbi (command &optional arg &rest _args)
   "Edbi backend for company-mode.
@@ -75,6 +94,7 @@ See `company-backends' for more info about COMMAND and ARG."
     (prefix (company-edbi-prefix))
     (candidates (company-edbi-candidates arg))
     (meta (company-edbi-meta arg))
+    (annotation (company-edbi-annotation arg))
     (ignore-case t)))
 
 (add-hook 'edbi:dbview-update-hook 'edbi:ac-editor-word-candidate-update)
