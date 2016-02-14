@@ -36,7 +36,9 @@
 
 (defun company-edbi-prefix ()
   "Grab prefix for `company-edbi' backend."
-  (and (eq major-mode 'edbi:sql-mode)
+  (and (or (eq major-mode 'edbi:sql-mode)
+           (if (bound-and-true-p edbi-minor-mode)
+               (setq-local edbi:connection edbi-minor-mode-connection)))
        (edbi:connection-ac edbi:connection)
        (not (company-in-string-or-comment))
        (or (company-grab-symbol-cons "\\." 1)
